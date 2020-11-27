@@ -505,6 +505,11 @@ export interface ReferenceObject {
 }
 
 /**
+ *
+ */
+export type Parameter = ParameterObject | ReferenceObject;
+
+/**
  * @description
  * A container for the expected responses of an operation.
  * The container maps a HTTP response code to the expected response.
@@ -604,7 +609,7 @@ export interface OperationObject extends ExtensionsObject {
    * The list can use the Reference Object to link to parameters that are defined at the Swagger Object's parameters.
    * There can be one "body" parameter at most.
    */
-  parameters?: ParameterObject | ReferenceObject;
+  parameters?: Parameter[];
   /**
    * @requires
    * The list of possible responses as they are returned from executing this operation.
@@ -683,7 +688,7 @@ export interface PathItemObject extends ExtensionsObject {
    * The list can use the Reference Object to link to parameters that are defined at the Swagger Object's parameters.
    * There can be one "body" parameter at most.
    */
-  parameters?: ParameterObject | ReferenceObject;
+  parameters?: Parameter[];
 }
 
 /**
@@ -811,7 +816,7 @@ export interface SecuritySchemeObjectOAuth2 extends SecuritySchemeObjectBase {
    * @requires
    * The token URL to be used for this flow. This SHOULD be in the form of a URL.
    */
-  tokenUrl: string;
+  tokenUrl?: string;
   /**
    * @requires
    * The available scopes for the OAuth2 security scheme.`
