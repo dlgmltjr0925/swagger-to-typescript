@@ -9,20 +9,11 @@
  */
 type MimeType = string;
 
-export interface ExtensionsObject {
-  /**
-   * @description
-   * Allows extensions to the Swagger Schema. The field name MUST begin with x-, for example, x-internal-id.
-   * The value can be null, a primitive, an array or an object. See Vendor Extensions for further details.
-   */
-  [xKey: string]: any;
-}
-
 /**
  * @description
  * Contact information for the exposed API.
  */
-export interface ContactObject extends ExtensionsObject {
+export interface ContactObject {
   /**
    * The identifying name of the contact person/organization.
    */
@@ -43,7 +34,7 @@ export interface ContactObject extends ExtensionsObject {
  * @description
  * License information for the exposed API.
  */
-export interface LicenseObject extends ExtensionsObject {
+export interface LicenseObject {
   /**
    * @requires
    * The license name used for the API.
@@ -95,7 +86,7 @@ export interface InfoObject {
  * When using arrays, XML element names are not inferred (for singular/plural forms) and the name property should be used to add that information.
  * See examples for expected behavior.
  */
-interface XMLObject extends ExtensionsObject {
+interface XMLObject {
   /**
    * Replaces the name of the element/attribute used for the described schema property.
    * When defined within the Items Object (items), it will affect the name of the individual XML elements within the list.
@@ -130,7 +121,7 @@ interface XMLObject extends ExtensionsObject {
  * @description
  * Allows referencing an external resource for extended documentation.
  */
-export interface ExternalDocumentationObject extends ExtensionsObject {
+export interface ExternalDocumentationObject {
   /**
    * A short description of the target documentation.
    * GFM syntax can be used for rich text representation.
@@ -185,7 +176,7 @@ export interface ExternalDocumentationObject extends ExtensionsObject {
  *
  * Other than the JSON Schema subset fields, the following fields may be used for further schema documentation.
  */
-export interface SchemaObject extends ExtensionsObject {
+export interface SchemaObject extends Omit<ItemsObject, 'type'> {
   /**
    * Adds support for polymorphism.
    * The discriminator is the schema property name that is used to differentiate between other schema that inherit this schema.
@@ -214,49 +205,26 @@ export interface SchemaObject extends ExtensionsObject {
    * A free-form property to include an example of an instance for this schema.
    */
   example?: any;
-}
-
-/**
- *
- */
-interface ParameterObjectBase {
   /**
-   * @requires
-   * The name of the parameter. Parameter names are case sensitive.
-   * If in is "path", the name field MUST correspond to the associated path segment from the path field in the Paths Object.
-   * See Path Templating for further information.
-   * For all other cases, the name corresponds to the parameter name used based on the in property.
-   */
-  name: string;
-  /**
-   * A brief description of the parameter.
-   * This could contain examples of use.
-   * GFM syntax can be used for rich text representation.
+   *
    */
   description?: string;
   /**
-   * Determines whether this parameter is mandatory.
-   * If the parameter is in "path", this property is required and its value MUST be true.
-   * Otherwise, the property MAY be included and its default value is false.
+   *
    */
-  required?: boolean;
-}
-
-/**
- *
- */
-interface ParameterObjectBody extends ParameterObjectBase {
+  type?: 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
   /**
-   * @requires
-   * The location of the parameter.
-   * Possible values are "query", "header", "path", "formData" or "body".
+   *
    */
-  in: 'body';
+  properties?: DefinitionsObject;
   /**
-   * @requires
-   * The schema defining the type used for the body parameter.
+   *
    */
-  schema: SchemaObject;
+  additionalProperties?: ItemsObject;
+  /**
+   *
+   */
+  required?: string[];
 }
 
 /**
@@ -264,7 +232,7 @@ interface ParameterObjectBody extends ParameterObjectBase {
  * A limited subset of JSON-Schema's items object.
  * It is used by parameter definitions that are not located in "body".
  */
-interface ItemsObject extends ExtensionsObject {
+interface ItemsObject {
   /**
    * @requires
    * The internal type of the array.
@@ -346,19 +314,78 @@ interface ItemsObject extends ExtensionsObject {
    * See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.1.
    */
   multipleOf?: number;
+  /**
+   *
+   */
+  $ref?: string;
+  /**
+   *
+   */
+  xml?: XMLObject;
 }
 
 /**
+ * @description
+ * Describes a single operation parameter.
  *
+ * A unique parameter is defined by a combination of a name and location.
+ *
+ * There are five possible parameter types.
+ *
+ * Path - Used together with Path Templating, where the parameter value is actually part of the operation's URL.
+ *        This does not include the host or base path of the API. For example,
+ *        in /items/{itemId}, the path parameter is itemId.
+ * Query - Parameters that are appended to the URL. For example, in /items?id=###, the query parameter is id.
+ * Header - Custom headers that are expected as part of the request.
+ * Body - The payload that's appended to the HTTP request. Since there can only be one payload, there can only be one body parameter.
+ *        The name of the body parameter has no effect on the parameter itself and is used for documentation purposes only.
+ *        Since Form parameters are also in the payload, body and form parameters cannot exist together for the same operation.
+ * Form - Used to describe the payload of an HTTP request when either application/x-www-form-urlencoded, multipart/form-data or both
+ *        are used as the content type of the request (in Swagger's definition, the consumes property of an operation).
+ *        This is the only parameter type that can be used to send files, thus supporting the file type.
+ *        Since form parameters are sent in the payload, they cannot be declared together with a body parameter for the same operation.
+ *        Form parameters have a different format based on the content-type used (for further details,
+ *        consult http://www.w3.org/TR/html401/interact/forms.html#h-17.13.4):
+ *        - application/x-www-form-urlencoded - Similar to the format of Query parameters but as a payload.
+ *                For example, foo=1&bar=swagger - both foo and bar are form parameters.
+ *                This is normally used for simple parameters that are being transferred.
+ *        - multipart/form-data - each parameter takes a section in the payload with an internal header.
+ *                For example, for the header Content-Disposition: form-data; name="submit-name" the name of the parameter is submit-name.
+ *                This type of form parameters is more commonly used for file transfers.
  */
-interface ParameterObjectOther
+export interface ParameterObject
   extends Omit<ItemsObject, 'type' | 'collectionFormat' | 'default'> {
+  /**
+   * @requires
+   * The name of the parameter. Parameter names are case sensitive.
+   * If in is "path", the name field MUST correspond to the associated path segment from the path field in the Paths Object.
+   * See Path Templating for further information.
+   * For all other cases, the name corresponds to the parameter name used based on the in property.
+   */
+  name: string;
   /**
    * @requires
    * The location of the parameter.
    * Possible values are "query", "header", "path", "formData" or "body".
    */
-  in: 'query' | 'header' | 'path' | 'formData';
+  in: 'query' | 'header' | 'path' | 'formData' | 'body';
+  /**
+   * A brief description of the parameter.
+   * This could contain examples of use.
+   * GFM syntax can be used for rich text representation.
+   */
+  description?: string;
+  /**
+   * Determines whether this parameter is mandatory.
+   * If the parameter is in "path", this property is required and its value MUST be true.
+   * Otherwise, the property MAY be included and its default value is false.
+   */
+  required?: boolean;
+  /**
+   * @requires
+   * The schema defining the type used for the body parameter.
+   */
+  schema?: SchemaObject;
   /**
    * @requires
    * The type of the parameter.
@@ -394,37 +421,6 @@ interface ParameterObjectOther
    */
   default?: any;
 }
-
-/**
- * @description
- * Describes a single operation parameter.
- *
- * A unique parameter is defined by a combination of a name and location.
- *
- * There are five possible parameter types.
- *
- * Path - Used together with Path Templating, where the parameter value is actually part of the operation's URL.
- *        This does not include the host or base path of the API. For example,
- *        in /items/{itemId}, the path parameter is itemId.
- * Query - Parameters that are appended to the URL. For example, in /items?id=###, the query parameter is id.
- * Header - Custom headers that are expected as part of the request.
- * Body - The payload that's appended to the HTTP request. Since there can only be one payload, there can only be one body parameter.
- *        The name of the body parameter has no effect on the parameter itself and is used for documentation purposes only.
- *        Since Form parameters are also in the payload, body and form parameters cannot exist together for the same operation.
- * Form - Used to describe the payload of an HTTP request when either application/x-www-form-urlencoded, multipart/form-data or both
- *        are used as the content type of the request (in Swagger's definition, the consumes property of an operation).
- *        This is the only parameter type that can be used to send files, thus supporting the file type.
- *        Since form parameters are sent in the payload, they cannot be declared together with a body parameter for the same operation.
- *        Form parameters have a different format based on the content-type used (for further details,
- *        consult http://www.w3.org/TR/html401/interact/forms.html#h-17.13.4):
- *        - application/x-www-form-urlencoded - Similar to the format of Query parameters but as a payload.
- *                For example, foo=1&bar=swagger - both foo and bar are form parameters.
- *                This is normally used for simple parameters that are being transferred.
- *        - multipart/form-data - each parameter takes a section in the payload with an internal header.
- *                For example, for the header Content-Disposition: form-data; name="submit-name" the name of the parameter is submit-name.
- *                This type of form parameters is more commonly used for file transfers.
- */
-export type ParameterObject = ParameterObjectBody | ParameterObjectOther;
 
 /**
  *
@@ -521,19 +517,19 @@ export type Parameter = ParameterObject | ReferenceObject;
  * The Responses Object MUST contain at least one response code,
  * and it SHOULD be the response for a successful operation call.
  */
-export interface ResponsesObject extends ExtensionsObject {
+export interface ResponsesObject {
   /**
    * The documentation of responses other than the ones declared for specific HTTP response codes.
    * It can be used to cover undeclared responses.
    * Reference Object can be used to link to a response that is defined at the Swagger Object's responses section.
    */
-  default?: ResponseObject | ReferenceObject;
+  // default?: ResponseObject | ReferenceObject;
   /**
    * Any HTTP status code can be used as the property name (one property per HTTP status code).
    * Describes the expected response for that HTTP status code.
    * Reference Object can be used to link to a response that is defined at the Swagger Object's responses section.
    */
-  [httpStatusCode: number]: ResponseObject | ReferenceObject;
+  [httpStatusCode: string]: ResponseObject | ReferenceObject;
 }
 
 /**
@@ -560,7 +556,7 @@ export interface SecurityRequirementObject {
  * @description
  * Describes a single API operation on a path.
  */
-export interface OperationObject extends ExtensionsObject {
+export interface OperationObject {
   /**
    * A list of tags for API documentation control.
    * Tags can be used for logical grouping of operations by resources or any other qualifier.
@@ -644,7 +640,7 @@ export interface OperationObject extends ExtensionsObject {
  * The path itself is still exposed to the documentation viewer
  * but they will not know which operations and parameters are available.
  */
-export interface PathItemObject extends ExtensionsObject {
+export interface PathItemObject {
   /**
    * Allows for an external definition of this path item.
    * The referenced structure MUST be in the format of a Path Item Object.
@@ -697,8 +693,8 @@ export interface PathItemObject extends ExtensionsObject {
  * The path is appended to the basePath in order to construct the full URL.
  * The Paths may be empty, due to ACL constraints.
  */
-export interface PathsObject extends ExtensionsObject {
-  [key: string]: PathItemObject;
+export interface PathsObject {
+  [path: string]: PathItemObject;
 }
 
 /**
@@ -785,7 +781,7 @@ export interface SecuritySchemeObjectApiKey extends SecuritySchemeObjectBase {
  * @description
  * Lists the available scopes for an OAuth2 security scheme.
  */
-export interface ScopesObject extends ExtensionsObject {
+export interface ScopesObject {
   /**
    * Maps between a name of a scope to a short description of it (as the value of the property).
    */
@@ -854,7 +850,7 @@ export interface SecurityDefinitionsObject {
  * Allows adding meta data to a single tag that is used by the Operation Object.
  * It is not mandatory to have a Tag Object per tag used there.
  */
-export interface TagObject extends ExtensionsObject {
+export interface TagObject {
   /**
    * @requires
    * The name of the tag.
@@ -875,7 +871,7 @@ export interface TagObject extends ExtensionsObject {
  * This is the root document object for the API specification.
  * It combines what previously was the Resource Listing and API Declaration (version 1.2 and earlier) together into one document.
  */
-export interface SwaggerObject extends ExtensionsObject {
+export interface SwaggerObject {
   /**
    * @requires
    * Specifies the Swagger Specification version being used.
