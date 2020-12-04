@@ -10,10 +10,9 @@
 type MimeType = string;
 
 /**
- * @description
- * Contact information for the exposed API.
+ *
  */
-export interface ContactObject {
+export interface ContactObjectBase {
   /**
    * The identifying name of the contact person/organization.
    */
@@ -32,9 +31,14 @@ export interface ContactObject {
 
 /**
  * @description
- * License information for the exposed API.
+ * Contact information for the exposed API.
  */
-export interface LicenseObject {
+export type ContactObject<T> = T & ContactObjectBase;
+
+/**
+ *
+ */
+export interface LicenseObjectBase {
   /**
    * @requires
    * The license name used for the API.
@@ -48,10 +52,14 @@ export interface LicenseObject {
 
 /**
  * @description
- * The object provides metadata about the API.
- * The metadata can be used by the clients if needed, and can be presented in the Swagger-UI for convenience.
+ * License information for the exposed API.
  */
-export interface InfoObject {
+export type LicenseObject<T> = T & LicenseObjectBase;
+
+/**
+ *
+ */
+export interface InfoObjectBase<T> {
   /**
    * @requires
    * The title of the application.
@@ -69,16 +77,24 @@ export interface InfoObject {
   /**
    * The contact information for the exposed API.
    */
-  contact?: ContactObject;
+  contact?: ContactObject<T>;
   /**
    * The license information for the exposed API.
    */
-  license?: LicenseObject;
+  license?: LicenseObject<T>;
   /**
    * Required Provides the version of the application API (not to be confused with the specification version).
    */
   version: string;
 }
+
+type InfoObject<T> = T & InfoObjectBase<T>;
+
+/**
+ * @description
+ * The object provides metadata about the API.
+ * The metadata can be used by the clients if needed, and can be presented in the Swagger-UI for convenience.
+ */
 
 /**
  * @description
@@ -118,10 +134,9 @@ interface XMLObject {
 }
 
 /**
- * @description
- * Allows referencing an external resource for extended documentation.
+ *
  */
-export interface ExternalDocumentationObject {
+export interface ExternalDocumentationObjectBase {
   /**
    * A short description of the target documentation.
    * GFM syntax can be used for rich text representation.
@@ -133,6 +148,78 @@ export interface ExternalDocumentationObject {
    * Value MUST be in the format of a URL.
    */
   url: string;
+}
+
+/**
+ * @description
+ * Allows referencing an external resource for extended documentation.
+ */
+export type ExternalDocumentationObject<T> = T &
+  ExternalDocumentationObjectBase;
+
+/**
+ *
+ */
+export interface SchemaObjectBase<T> extends Omit<ItemsObject, 'type'> {
+  /**
+   * Adds support for polymorphism.
+   * The discriminator is the schema property name that is used to differentiate between other schema that inherit this schema.
+   *  The property name used MUST be defined at this schema and it MUST be in the required property list.
+   * When used, the value MUST be the name of this schema or any schema that inherits it.
+   */
+  discriminator?: string;
+  /**
+   * Relevant only for Schema "properties" definitions.
+   * Declares the property as "read only".
+   * This means that it MAY be sent as part of a response but MUST NOT be sent as part of the request.
+   * Properties marked as readOnly being true SHOULD NOT be in the required list of the defined schema. Default value is false.
+   */
+  readOnly?: boolean;
+  /**
+   * This MAY be used only on properties schemas.
+   * It has no effect on root schemas.
+   * Adds Additional metadata to describe the XML representation format of this property.
+   */
+  xml?: XMLObject;
+  /**
+   * Additional external documentation for this schema.
+   */
+  externalDocs?: ExternalDocumentationObject<T>;
+  /**
+   * A free-form property to include an example of an instance for this schema.
+   */
+  example?: any;
+  /**
+   *
+   */
+  description?: string;
+  /**
+   *
+   */
+  type?:
+    | 'string'
+    | 'number'
+    | 'integer'
+    | 'boolean'
+    | 'array'
+    | 'object'
+    | 'file';
+  /**
+   *
+   */
+  properties?: DefinitionsObject<T>;
+  /**
+   *
+   */
+  additionalProperties?: ItemsObject;
+  /**
+   *
+   */
+  required?: string[];
+  /**
+   *
+   */
+  title?: string;
 }
 
 /**
@@ -176,56 +263,7 @@ export interface ExternalDocumentationObject {
  *
  * Other than the JSON Schema subset fields, the following fields may be used for further schema documentation.
  */
-export interface SchemaObject extends Omit<ItemsObject, 'type'> {
-  /**
-   * Adds support for polymorphism.
-   * The discriminator is the schema property name that is used to differentiate between other schema that inherit this schema.
-   *  The property name used MUST be defined at this schema and it MUST be in the required property list.
-   * When used, the value MUST be the name of this schema or any schema that inherits it.
-   */
-  discriminator?: string;
-  /**
-   * Relevant only for Schema "properties" definitions.
-   * Declares the property as "read only".
-   * This means that it MAY be sent as part of a response but MUST NOT be sent as part of the request.
-   * Properties marked as readOnly being true SHOULD NOT be in the required list of the defined schema. Default value is false.
-   */
-  readOnly?: boolean;
-  /**
-   * This MAY be used only on properties schemas.
-   * It has no effect on root schemas.
-   * Adds Additional metadata to describe the XML representation format of this property.
-   */
-  xml?: XMLObject;
-  /**
-   * Additional external documentation for this schema.
-   */
-  externalDocs?: ExternalDocumentationObject;
-  /**
-   * A free-form property to include an example of an instance for this schema.
-   */
-  example?: any;
-  /**
-   *
-   */
-  description?: string;
-  /**
-   *
-   */
-  type?: 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
-  /**
-   *
-   */
-  properties?: DefinitionsObject;
-  /**
-   *
-   */
-  additionalProperties?: ItemsObject;
-  /**
-   *
-   */
-  required?: string[];
-}
+export type SchemaObject<T> = T & SchemaObjectBase<T>;
 
 /**
  * @description
@@ -239,7 +277,7 @@ interface ItemsObject {
    * The value MUST be one of "string", "number", "integer", "boolean", or "array".
    * Files and models are not allowed.
    */
-  type?: 'string' | 'number' | 'integer' | 'boolean' | 'array';
+  type?: 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
   /**
    * The extending format for the previously mentioned type.
    * See Data Type Formats for further details.
@@ -325,35 +363,9 @@ interface ItemsObject {
 }
 
 /**
- * @description
- * Describes a single operation parameter.
  *
- * A unique parameter is defined by a combination of a name and location.
- *
- * There are five possible parameter types.
- *
- * Path - Used together with Path Templating, where the parameter value is actually part of the operation's URL.
- *        This does not include the host or base path of the API. For example,
- *        in /items/{itemId}, the path parameter is itemId.
- * Query - Parameters that are appended to the URL. For example, in /items?id=###, the query parameter is id.
- * Header - Custom headers that are expected as part of the request.
- * Body - The payload that's appended to the HTTP request. Since there can only be one payload, there can only be one body parameter.
- *        The name of the body parameter has no effect on the parameter itself and is used for documentation purposes only.
- *        Since Form parameters are also in the payload, body and form parameters cannot exist together for the same operation.
- * Form - Used to describe the payload of an HTTP request when either application/x-www-form-urlencoded, multipart/form-data or both
- *        are used as the content type of the request (in Swagger's definition, the consumes property of an operation).
- *        This is the only parameter type that can be used to send files, thus supporting the file type.
- *        Since form parameters are sent in the payload, they cannot be declared together with a body parameter for the same operation.
- *        Form parameters have a different format based on the content-type used (for further details,
- *        consult http://www.w3.org/TR/html401/interact/forms.html#h-17.13.4):
- *        - application/x-www-form-urlencoded - Similar to the format of Query parameters but as a payload.
- *                For example, foo=1&bar=swagger - both foo and bar are form parameters.
- *                This is normally used for simple parameters that are being transferred.
- *        - multipart/form-data - each parameter takes a section in the payload with an internal header.
- *                For example, for the header Content-Disposition: form-data; name="submit-name" the name of the parameter is submit-name.
- *                This type of form parameters is more commonly used for file transfers.
  */
-export interface ParameterObject
+export interface ParameterObjectBase<T>
   extends Omit<ItemsObject, 'type' | 'collectionFormat' | 'default'> {
   /**
    * @requires
@@ -385,7 +397,7 @@ export interface ParameterObject
    * @requires
    * The schema defining the type used for the body parameter.
    */
-  schema?: SchemaObject;
+  schema?: SchemaObject<T>;
   /**
    * @requires
    * The type of the parameter.
@@ -394,7 +406,7 @@ export interface ParameterObject
    * If type is "file", the consumes MUST be either "multipart/form-data", " application/x-www-form-urlencoded" or both
    * and the parameter MUST be in "formData".
    */
-  type?: 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'file';
+  type?: 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'file' | 'ref';
   /**
    * Sets the ability to pass empty-valued parameters.
    * This is valid only for either query or formData parameters and allows you to send a parameter with a name only or an empty value.
@@ -421,6 +433,37 @@ export interface ParameterObject
    */
   default?: any;
 }
+
+/**
+ * @description
+ * Describes a single operation parameter.
+ *
+ * A unique parameter is defined by a combination of a name and location.
+ *
+ * There are five possible parameter types.
+ *
+ * Path - Used together with Path Templating, where the parameter value is actually part of the operation's URL.
+ *        This does not include the host or base path of the API. For example,
+ *        in /items/{itemId}, the path parameter is itemId.
+ * Query - Parameters that are appended to the URL. For example, in /items?id=###, the query parameter is id.
+ * Header - Custom headers that are expected as part of the request.
+ * Body - The payload that's appended to the HTTP request. Since there can only be one payload, there can only be one body parameter.
+ *        The name of the body parameter has no effect on the parameter itself and is used for documentation purposes only.
+ *        Since Form parameters are also in the payload, body and form parameters cannot exist together for the same operation.
+ * Form - Used to describe the payload of an HTTP request when either application/x-www-form-urlencoded, multipart/form-data or both
+ *        are used as the content type of the request (in Swagger's definition, the consumes property of an operation).
+ *        This is the only parameter type that can be used to send files, thus supporting the file type.
+ *        Since form parameters are sent in the payload, they cannot be declared together with a body parameter for the same operation.
+ *        Form parameters have a different format based on the content-type used (for further details,
+ *        consult http://www.w3.org/TR/html401/interact/forms.html#h-17.13.4):
+ *        - application/x-www-form-urlencoded - Similar to the format of Query parameters but as a payload.
+ *                For example, foo=1&bar=swagger - both foo and bar are form parameters.
+ *                This is normally used for simple parameters that are being transferred.
+ *        - multipart/form-data - each parameter takes a section in the payload with an internal header.
+ *                For example, for the header Content-Disposition: form-data; name="submit-name" the name of the parameter is submit-name.
+ *                This type of form parameters is more commonly used for file transfers.
+ */
+export type ParameterObject<T> = T & ParameterObjectBase<T>;
 
 /**
  *
@@ -460,7 +503,7 @@ export interface ExampleObject {
  * @description
  * Describes a single response from an API Operation.
  */
-export interface ResponseObject {
+export interface ResponseObjectBase<T> {
   /**
    * @requires
    * A short description of the response.
@@ -474,7 +517,7 @@ export interface ResponseObject {
    * As an extension to the Schema Object, its root type value may also be "file".
    * This SHOULD be accompanied by a relevant produces mime-type.
    */
-  schema?: SchemaObject;
+  schema?: SchemaObject<T>;
   /**
    * A list of headers that are sent with the response.
    */
@@ -484,6 +527,8 @@ export interface ResponseObject {
    */
   examples?: ExampleObject;
 }
+
+export type ResponseObject<T> = T & ResponseObjectBase<T>;
 
 /**
  * @description
@@ -503,7 +548,25 @@ export interface ReferenceObject {
 /**
  *
  */
-export type Parameter = ParameterObject | ReferenceObject;
+export type Parameter<T> = ParameterObject<T> | ReferenceObject;
+
+/**
+ *
+ */
+export interface ResponsesObjectBase<T> {
+  /**
+   * The documentation of responses other than the ones declared for specific HTTP response codes.
+   * It can be used to cover undeclared responses.
+   * Reference Object can be used to link to a response that is defined at the Swagger Object's responses section.
+   */
+  // default?: ResponseObject | ReferenceObject;
+  /**
+   * Any HTTP status code can be used as the property name (one property per HTTP status code).
+   * Describes the expected response for that HTTP status code.
+   * Reference Object can be used to link to a response that is defined at the Swagger Object's responses section.
+   */
+  [httpStatusCode: string]: ResponseObject<T> | ReferenceObject;
+}
 
 /**
  * @description
@@ -517,20 +580,7 @@ export type Parameter = ParameterObject | ReferenceObject;
  * The Responses Object MUST contain at least one response code,
  * and it SHOULD be the response for a successful operation call.
  */
-export interface ResponsesObject {
-  /**
-   * The documentation of responses other than the ones declared for specific HTTP response codes.
-   * It can be used to cover undeclared responses.
-   * Reference Object can be used to link to a response that is defined at the Swagger Object's responses section.
-   */
-  // default?: ResponseObject | ReferenceObject;
-  /**
-   * Any HTTP status code can be used as the property name (one property per HTTP status code).
-   * Describes the expected response for that HTTP status code.
-   * Reference Object can be used to link to a response that is defined at the Swagger Object's responses section.
-   */
-  [httpStatusCode: string]: ResponseObject | ReferenceObject;
-}
+export type ResponsesObject<T> = T & ResponsesObjectBase<T>;
 
 /**
  *
@@ -553,10 +603,9 @@ export interface SecurityRequirementObject {
 }
 
 /**
- * @description
- * Describes a single API operation on a path.
+ *
  */
-export interface OperationObject {
+export interface OperationObjectBase<T> {
   /**
    * A list of tags for API documentation control.
    * Tags can be used for logical grouping of operations by resources or any other qualifier.
@@ -575,7 +624,7 @@ export interface OperationObject {
   /**
    * Additional external documentation for this operation.
    */
-  externalDocs?: ExternalDocumentationObject;
+  externalDocs?: ExternalDocumentationObject<T>;
   /**
    * Unique string used to identify the operation.
    * The id MUST be unique among all operations described in the API.
@@ -605,12 +654,12 @@ export interface OperationObject {
    * The list can use the Reference Object to link to parameters that are defined at the Swagger Object's parameters.
    * There can be one "body" parameter at most.
    */
-  parameters?: Parameter[];
+  parameters?: Parameter<T>[];
   /**
    * @requires
    * The list of possible responses as they are returned from executing this operation.
    */
-  responses: ResponsesObject;
+  responses: ResponsesObject<T>;
   /**
    * The transfer protocol for the operation.
    * Values MUST be from the list: "http", "https", "ws", "wss".
@@ -635,12 +684,14 @@ export interface OperationObject {
 
 /**
  * @description
- * Describes the operations available on a single path.
- * A Path Item may be empty, due to ACL constraints.
- * The path itself is still exposed to the documentation viewer
- * but they will not know which operations and parameters are available.
+ * Describes a single API operation on a path.
  */
-export interface PathItemObject {
+export type OperationObject<T> = T & OperationObjectBase<T>;
+
+/**
+ *
+ */
+export interface PathItemObjectBase<T> {
   /**
    * Allows for an external definition of this path item.
    * The referenced structure MUST be in the format of a Path Item Object.
@@ -651,31 +702,31 @@ export interface PathItemObject {
   /**
    * A definition of a GET operation on this path.
    */
-  get?: OperationObject;
+  get?: OperationObject<T>;
   /**
    * A definition of a PUT operation on this path.
    */
-  put?: OperationObject;
+  put?: OperationObject<T>;
   /**
    * A definition of a POST operation on this path.
    */
-  post?: OperationObject;
+  post?: OperationObject<T>;
   /**
    * A definition of a DELETE operation on this path.
    */
-  delete?: OperationObject;
+  delete?: OperationObject<T>;
   /**
    * A definition of a OPTIONS operation on this path.
    */
-  options?: OperationObject;
+  options?: OperationObject<T>;
   /**
    * A definition of a HEAD operation on this path.
    */
-  head?: OperationObject;
+  head?: OperationObject<T>;
   /**
    * A definition of a PATCH operation on this path.
    */
-  patch?: OperationObject;
+  patch?: OperationObject<T>;
   /**
    * A list of parameters that are applicable for all the operations described under this path.
    * These parameters can be overridden at the operation level, but cannot be removed there.
@@ -684,7 +735,23 @@ export interface PathItemObject {
    * The list can use the Reference Object to link to parameters that are defined at the Swagger Object's parameters.
    * There can be one "body" parameter at most.
    */
-  parameters?: Parameter[];
+  parameters?: Parameter<T>[];
+}
+
+/**
+ * @description
+ * Describes the operations available on a single path.
+ * A Path Item may be empty, due to ACL constraints.
+ * The path itself is still exposed to the documentation viewer
+ * but they will not know which operations and parameters are available.
+ */
+export type PathItemObject<T> = T & PathItemObjectBase<T>;
+
+/**
+ *
+ */
+export interface PathsObjectBase<T> {
+  [path: string]: PathItemObject<T>;
 }
 
 /**
@@ -693,20 +760,18 @@ export interface PathItemObject {
  * The path is appended to the basePath in order to construct the full URL.
  * The Paths may be empty, due to ACL constraints.
  */
-export interface PathsObject {
-  [path: string]: PathItemObject;
-}
+export type PathsObject<T> = T & PathsObjectBase<T>;
 
 /**
  * @description
  * An object to hold data types that can be consumed and produced by operations.
  * These data types can be primitives, arrays or models.
  */
-export interface DefinitionsObject {
+export interface DefinitionsObject<T> {
   /**
    * A single definition, mapping a "name" to the schema it defines.
    */
-  [name: string]: SchemaObject;
+  [name: string]: SchemaObject<T>;
 }
 
 /**
@@ -715,11 +780,11 @@ export interface DefinitionsObject {
  * Parameter definitions can be referenced to the ones defined here.
  * This does not define global operation parameters.
  */
-export interface ParametersDefinitionsObject {
+export interface ParametersDefinitionsObject<T> {
   /**
    * A single parameter definition, mapping a "name" to the parameter it defines.
    */
-  [name: string]: ParameterObject;
+  [name: string]: ParameterObject<T>;
 }
 
 /**
@@ -728,11 +793,11 @@ export interface ParametersDefinitionsObject {
  * Response definitions can be referenced to the ones defined here.
  * This does not define global operation responses.
  */
-export interface ResponsesDefinitionsObject {
+export interface ResponsesDefinitionsObject<T> {
   /**
    * A single response definition, mapping a "name" to the response it defines.
    */
-  [name: string]: ResponseObject;
+  [name: string]: ResponseObject<T>;
 }
 
 /**
@@ -827,10 +892,12 @@ export interface SecuritySchemeObjectOAuth2 extends SecuritySchemeObjectBase {
  * an API key (either as a header or as a query parameter)
  * and OAuth2's common flows (implicit, password, application and access code).
  */
-export type SecuritySchemeObject =
-  | SecuritySchemeObjectBasic
-  | SecuritySchemeObjectApiKey
-  | SecuritySchemeObjectOAuth2;
+export type SecuritySchemeObject<T> = T &
+  (
+    | SecuritySchemeObjectBasic
+    | SecuritySchemeObjectApiKey
+    | SecuritySchemeObjectOAuth2
+  );
 
 /**
  * @description
@@ -838,19 +905,17 @@ export type SecuritySchemeObject =
  * This does not enforce the security schemes on the operations
  * and only serves to provide the relevant details for each scheme.
  */
-export interface SecurityDefinitionsObject {
+export interface SecurityDefinitionsObject<T> {
   /**
    * A single security scheme definition, mapping a "name" to the scheme it defines.
    */
-  [name: string]: SecuritySchemeObject;
+  [name: string]: SecuritySchemeObject<T>;
 }
 
 /**
- * @description
- * Allows adding meta data to a single tag that is used by the Operation Object.
- * It is not mandatory to have a Tag Object per tag used there.
+ *
  */
-export interface TagObject {
+export interface TagObjectBase<T> {
   /**
    * @requires
    * The name of the tag.
@@ -863,15 +928,22 @@ export interface TagObject {
   /**
    * Additional external documentation for this tag.
    */
-  externalDocs?: ExternalDocumentationObject;
+  externalDocs?: ExternalDocumentationObject<T>;
 }
+
+/**
+ * @description
+ * Allows adding meta data to a single tag that is used by the Operation Object.
+ * It is not mandatory to have a Tag Object per tag used there.
+ */
+export type TagObject<T> = T & TagObjectBase<T>;
 
 /**
  * @description
  * This is the root document object for the API specification.
  * It combines what previously was the Resource Listing and API Declaration (version 1.2 and earlier) together into one document.
  */
-export interface SwaggerObject {
+export interface SwaggerObject<T = any> {
   /**
    * @requires
    * Specifies the Swagger Specification version being used.
@@ -882,7 +954,7 @@ export interface SwaggerObject {
    * @requires
    * Provides metadata about the API. The metadata can be used by the clients if needed.
    */
-  info: InfoObject;
+  info: InfoObject<T>;
   /**
    * The host (name or ip) serving the API.
    * This MUST be the host only and does not include the scheme nor sub-paths.
@@ -918,25 +990,25 @@ export interface SwaggerObject {
    * @requires
    * The available paths and operations for the API.
    */
-  paths: PathsObject;
+  paths: PathsObject<T>;
   /**
    * An object to hold data types produced and consumed by operations.
    */
-  definitions?: DefinitionsObject;
+  definitions?: DefinitionsObject<T>;
   /**
    * An object to hold parameters that can be used across operations.
    * This property does not define global parameters for all operations.
    */
-  parameters?: ParametersDefinitionsObject;
+  parameters?: ParametersDefinitionsObject<T>;
   /**
    * An object to hold responses that can be used across operations.
    * This property does not define global responses for all operations.
    */
-  responses?: ResponsesDefinitionsObject;
+  responses?: ResponsesDefinitionsObject<T>;
   /**
    * Security scheme definitions that can be used across the specification.
    */
-  securityDefinitions?: SecurityDefinitionsObject;
+  securityDefinitions?: SecurityDefinitionsObject<T>;
   /**
    * A declaration of which security schemes are applied for the API as a whole.
    * The list of values describes alternative security schemes
@@ -951,9 +1023,15 @@ export interface SwaggerObject {
    * The tags that are not declared may be organized randomly or based on the tools' logic.
    * Each tag name in the list MUST be unique.
    */
-  tags: TagObject[];
+  tags: TagObject<T>[];
   /**
    * Additional external documentation.
    */
-  externalDocs: ExternalDocumentationObject;
+  externalDocs?: ExternalDocumentationObject<T>;
+  /**
+   * patterned objects
+   */
 }
+
+export type ExtendedSwaggerObject<T extends Record<string, unknown>> = T &
+  SwaggerObject<T>;
