@@ -1,3 +1,8 @@
+import {
+  createDefinitionFromModel,
+  createModelFromSwaggerObject,
+} from './libs/model';
+
 import { SwaggerObject } from './types/SwaggerObject';
 
 const petstore: SwaggerObject = {
@@ -904,4 +909,8 @@ const petstore: SwaggerObject = {
   },
 };
 
-console.log(petstore);
+const model = createModelFromSwaggerObject(petstore);
+
+const definitions = createDefinitionFromModel(model);
+
+console.log(definitions);

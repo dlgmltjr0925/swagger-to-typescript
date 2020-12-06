@@ -102,7 +102,7 @@ type InfoObject<T> = T & InfoObjectBase<T>;
  * When using arrays, XML element names are not inferred (for singular/plural forms) and the name property should be used to add that information.
  * See examples for expected behavior.
  */
-interface XMLObject {
+export interface XMLObject {
   /**
    * Replaces the name of the element/attribute used for the described schema property.
    * When defined within the Items Object (items), it will affect the name of the individual XML elements within the list.
@@ -270,7 +270,7 @@ export type SchemaObject<T> = T & SchemaObjectBase<T>;
  * A limited subset of JSON-Schema's items object.
  * It is used by parameter definitions that are not located in "body".
  */
-interface ItemsObject {
+export interface ItemsObject {
   /**
    * @requires
    * The internal type of the array.
@@ -943,7 +943,7 @@ export type TagObject<T> = T & TagObjectBase<T>;
  * This is the root document object for the API specification.
  * It combines what previously was the Resource Listing and API Declaration (version 1.2 and earlier) together into one document.
  */
-export interface SwaggerObject<T = any> {
+export interface SwaggerObject<T = Record<string, unknown>> {
   /**
    * @requires
    * Specifies the Swagger Specification version being used.
